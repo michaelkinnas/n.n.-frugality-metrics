@@ -4,6 +4,8 @@ A module that contains functions for calculating frugality metrics, intended for
 
 __author__ = 'Michael Kinnas'
 
+import matplotlib.pyplot as plt
+import numpy as np
 
 def A3R(S_aref: float, S_aj: float, T_aref: int, T_aj: int, N: int) -> float:
     """
@@ -61,7 +63,7 @@ def frug(P_aj: float, R_aj: float, w: float) -> float:
     ----------
         For my thesis can `R_aj` be power consumption?
     """
-    if P_aj < 0 or P_aj > 0:
+    if P_aj < 0 or P_aj > 1:
         raise ValueError('P_aj value must be between 0 and 1')  
     
     if R_aj <= 0:
@@ -71,3 +73,40 @@ def frug(P_aj: float, R_aj: float, w: float) -> float:
         raise ValueError('w value must be 0 or greater')
 
     return P_aj - (w / (1 + (1 / R_aj)))
+
+
+def plot_frugality_lines(values: list[(tuple)], score_fn=frug):
+    """
+    Plot frugality lines for comparisson.
+
+    Parameters
+    ----------
+    values: A list of tuples of type (str, float, float). The tuple values represent the algorithm name, accuracy, and resource cost in order. 
+        Accuracy value must be between 0 and 1 calculated from AUC E.g. and the resource cost must be a positive number.
+
+    score_fn: The score calculation function, `frug` by default.
+    """
+    n_points = 2
+    x_points = np.linspace(0, 1, n_points)
+    frugality_scores = []
+    line_labels = []
+
+    for value in values:
+        y_points = []
+        line_labels.append(value[0])
+        for x in x_points:
+            y_points.append(score_fn(value[1], value[2], x))
+        frugality_scores.append(y_points)
+
+    plt.figure(figsize=(12,8))
+    plt.title('Frugality Lines')
+    plt.xlabel('Index w')
+    plt.ylabel('Frugality score')    
+    plt.xlim([0, 1])
+    plt.ylim([0, 1])
+
+    for score in zip(frugality_scores, line_labels):
+        plt.plot(x_points, score[0], label=score[1])
+
+    plt.legend()
+    plt.show()
