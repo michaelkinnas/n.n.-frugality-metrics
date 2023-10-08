@@ -6,6 +6,7 @@ __author__ = 'Michael Kinnas'
 
 import matplotlib.pyplot as plt
 import numpy as np
+from typing import Iterable
 
 def A3R(S_aref: float, S_aj: float, T_aref: int, T_aj: int, N: int) -> float:
     """
@@ -75,27 +76,45 @@ def frug(P_aj: float, R_aj: float, w: float) -> float:
     return P_aj - (w / (1 + (1 / R_aj)))
 
 
-def plot_frugality_lines(values: list[(tuple)], score_fn=frug):
+def plot_frugality_lines(names: Iterable[str], accuracy: Iterable[float], resource: Iterable[float], score_function=frug):
     """
     Plot frugality lines for comparisson.
 
     Parameters
     ----------
-    values: A list of tuples of type (str, float, float). The tuple values represent the algorithm name, accuracy, and resource cost in order. 
-        Accuracy value must be between 0 and 1 calculated from AUC E.g. and the resource cost must be a positive number.
-
+    names: An iterable of each function name, for the plot legend.
+    accuracy: An iterable of accuracy values. Must be between 0 and 1.
+    resource: An iterable of resource cost values. Must be greater than 0.
     score_fn: The score calculation function, `frug` by default.
     """
+
+    # Exception handling
+    if len(accuracy) != len(resource) or len(accuracy) != len(names):
+        raise ValueError('names, accuracy and resource must be the same size')    
+    
+    for num in accuracy:
+        if num < 0 or num > 1:
+            raise ValueError('Accuracy values must be between 0 and 1')
+    
+    for num in resource:
+        if num <= 0:
+            raise ValueError('Resource values must be greater than 0')        
+
+    # Add names to empty strings
+    for idx, name in enumerate(names):
+        if name == '':
+            names[idx] = '(' + str(idx) + ')'
+
     n_points = 2
     x_points = np.linspace(0, 1, n_points)
     frugality_scores = []
     line_labels = []
 
-    for value in values:
+    for acc, res in zip(accuracy, resource):
         y_points = []
-        line_labels.append(value[0])
+        line_labels.append(acc)
         for x in x_points:
-            y_points.append(score_fn(value[1], value[2], x))
+            y_points.append(score_function(acc, res, x))
         frugality_scores.append(y_points)
 
     plt.figure(figsize=(12,8))
@@ -105,8 +124,8 @@ def plot_frugality_lines(values: list[(tuple)], score_fn=frug):
     plt.xlim([0, 1])
     plt.ylim([0, 1])
 
-    for score in zip(frugality_scores, line_labels):
-        plt.plot(x_points, score[0], label=score[1])
+    for score, name in zip(frugality_scores, names):      
+        plt.plot(x_points, score, label=name)
 
     plt.legend()
     plt.show()
