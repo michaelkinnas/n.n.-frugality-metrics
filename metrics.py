@@ -120,11 +120,11 @@ def plot_frugality_lines(names: Iterable[str], accuracy: Iterable[float], resour
     plt.figure(figsize=(12,8))
     plt.title('Frugality Lines')
     plt.xlabel('Index w')
-    plt.ylabel('Frugality score')    
+    plt.ylabel('Frugality score')
     plt.xlim([0, 1])
     plt.ylim([0, 1])
 
-    for score, name in zip(frugality_scores, names):      
+    for score, name in zip(frugality_scores, names):
         plt.plot(x_points, score, label=name)
 
     plt.legend()
