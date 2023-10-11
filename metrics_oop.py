@@ -1,10 +1,14 @@
 """
 A module that contains tools for calculating frugality metrics, intended for neural network algorithms.
 """
-
 import matplotlib.pyplot as plt
 import numpy as np
 from typing import Iterable
+from torch.nn import Module
+from torch.optim import Optimizer
+from torch.nn.modules.loss import _Loss
+from torch.utils.data import DataLoader
+import torch
 
 class Frugality():
     """ 
@@ -15,8 +19,8 @@ class Frugality():
 
 
     def calculate(self, P_aj: float, R_aj: float, w: float) -> float:        
-        # return P_aj - (w / (1 + (1 / R_aj)))
-        return P_aj - (1 / (1 + (np.exp(-np.log(R_aj)))))
+        return P_aj - (w / (1 + (1 / R_aj)))
+        # return P_aj - (1 / (1 + (np.exp(-np.log(R_aj)))))
     
     
     def __calculate_y_points(self, accuracy: float, resource: float) -> list[float]:
@@ -62,8 +66,40 @@ class Frugality():
             label, acc, res = item[:3]
             print(f'label: {label}, accuracy: {acc}, resources: {res}')
 
+# For a given model keep track:
+
+# Time taken training
+# Accuracy for every epoch
+# Loss function for every epoch
+# 
+
+"""
+aaa = TrainingMetric([(model, optimizer, loss_function, dataloader, epochs, seed, label)])
+"""
+
+class TrainingMetrics:
+    def __init__(self, models: Iterable[tuple[Module, _Loss, Optimizer, DataLoader, int, int, str]]):
+        self.models = models # array of tuples
+
+    def train(self, models: Iterable[str] | None = None): # Train models acording passed labels or tain all if None was passed
+        pass
     
-frug = Frugality()
-frug.add_many([('Less resources', 0.96, 5*60*1000), ('More resources', 0.99, 10*60*1000)])
-frug.plot()
-frug.values()
+    #TEST HITS
+    def train(self, index: int | None = None):
+        pass
+
+    def metrics(self, models: Iterable[str] | None = None):
+        pass
+
+    def plot(self, models: Iterable[str] | None = None):
+        pass
+
+    def models(self, models: Iterable[str] | None = None):
+        pass
+
+
+
+# loss_fn = torch.nn.BCEWithLogitsLoss()
+# print(loss_fn)
+    
+

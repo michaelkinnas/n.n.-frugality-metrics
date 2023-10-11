@@ -7,6 +7,14 @@ __author__ = 'Michael Kinnas'
 import matplotlib.pyplot as plt
 import numpy as np
 from typing import Iterable
+from torch.nn import Module
+from torch.optim import Optimizer
+from torch.nn.modules.loss import _Loss
+from torch.utils.data import DataLoader
+from timeit import default_timer as timer
+from tqdm.notebook import tqdm
+import torch
+
 
 def A3R(S_aref: float, S_aj: float, T_aref: int, T_aj: int, N: int) -> float:
     """
@@ -76,7 +84,8 @@ def frug(P_aj: float, R_aj: float, w: float) -> float:
     return P_aj - (w / (1 + (1 / R_aj)))
 
 
-def plot_frugality_lines(names: Iterable[str], accuracy: Iterable[float], resource: Iterable[float], score_function=frug):
+
+def plot_frugality_lines(values: Iterable[tuple[str, float, float]], score_function=frug):
     """
     Plot frugality lines for comparisson.
 
@@ -87,35 +96,8 @@ def plot_frugality_lines(names: Iterable[str], accuracy: Iterable[float], resour
     resource: An iterable of resource cost values. Must be greater than 0.
     score_fn: The score calculation function, `frug` by default.
     """
-
-    # Exception handling
-    if len(accuracy) != len(resource) or len(accuracy) != len(names):
-        raise ValueError('names, accuracy and resource must be the same size')    
-    
-    for num in accuracy:
-        if num < 0 or num > 1:
-            raise ValueError('Accuracy values must be between 0 and 1')
-    
-    for num in resource:
-        if num <= 0:
-            raise ValueError('Resource values must be greater than 0')        
-
-    # Add names to empty strings
-    for idx, name in enumerate(names):
-        if name == '':
-            names[idx] = '(' + str(idx) + ')'
-
     n_points = 2
-    x_points = np.linspace(0, 1, n_points)
-    frugality_scores = []
-    line_labels = []
-
-    for acc, res in zip(accuracy, resource):
-        y_points = []
-        line_labels.append(acc)
-        for x in x_points:
-            y_points.append(score_function(acc, res, x))
-        frugality_scores.append(y_points)
+    x_points = np.linspace(0, 1, n_points)   
 
     plt.figure(figsize=(12,8))
     plt.title('Frugality Lines')
@@ -123,9 +105,70 @@ def plot_frugality_lines(names: Iterable[str], accuracy: Iterable[float], resour
     plt.ylabel('Frugality score')
     plt.xlim([0, 1])
     plt.ylim([0, 1])
-
-    for score, name in zip(frugality_scores, names):
-        plt.plot(x_points, score, label=name)
+    
+    for idx, item in enumerate(values):
+        accuracy, resources, label = item        
+        plt.plot(x_points, [score_function(accuracy, resources, x) for x in x_points], label=label)       
 
     plt.legend()
     plt.show()
+
+def accuracy():
+    pass
+
+
+def train_metrics(model: Module,                  
+                  loss_fn: _Loss, 
+                  optimizer: Optimizer, 
+                  dataloader: DataLoader, 
+                  epochs: int, 
+                  seed: int, 
+                  device='cpu', 
+                  accuracy_fn=accuracy):
+    
+    accuracy = []
+    losses = []
+
+    
+    X_train, y_train, X_test, y_test = X_train.to(device), y_train.to(device), X_test.to(device), y_test.to(device)
+
+    start_time = timer()
+    for epoch in tqdm(range(epochs)):
+        model.train()
+
+        # 1. Forward passs
+        y_train_logits = model(X_train)
+        y_train_probs = torch.sigmoid(y_train_logits)
+        y_train_pred = torch.round(y_train_probs) # logits -> prediction probabilities -> prediction labels
+
+
+        # 2. Calculate the loss
+        loss = loss_fn(y_train_logits, y_train) # BCEWithLogitsLoss (takes in logits as first input)
+        acc = accuracy_fn(y_true=y_train, y_pred=y_train_pred)
+
+        # 3. Optimizer zero grad
+        optimizer.zero_grad()
+
+        # 4. Loss backward
+        loss.backward()
+
+        # 5. Step the optimizer
+        optimizer.step()
+
+        
+        
+        if epoch % 50 == 0:
+            print(f'Epoch: {epoch:04d} | Loss: {loss:.4f}, Acc: {acc:.2f}%')
+
+
+    end_time = timer()
+    time = start_time - end_time
+    # print_train_time(start=start_time, end=end_time, device=device)
+
+
+    return accuracy, losses, time
+    return {
+        'accuracy': [],
+        'loss': [],
+        'time': time
+    }
