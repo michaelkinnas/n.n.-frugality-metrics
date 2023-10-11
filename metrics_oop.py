@@ -1,8 +1,6 @@
 """
-A module that contains functions for calculating frugality metrics, intended for neural network algorithms.
+A module that contains tools for calculating frugality metrics, intended for neural network algorithms.
 """
-
-__author__ = 'Michael Kinnas'
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,7 +15,8 @@ class Frugality():
 
 
     def calculate(self, P_aj: float, R_aj: float, w: float) -> float:        
-        return P_aj - (w / (1 + (1 / R_aj)))
+        # return P_aj - (w / (1 + (1 / R_aj)))
+        return P_aj - (1 / (1 + (np.exp(-np.log(R_aj)))))
     
     
     def __calculate_y_points(self, accuracy: float, resource: float) -> list[float]:
@@ -29,7 +28,7 @@ class Frugality():
         if resource <= 0:
             raise ValueError('Resource values must be greater than 0')
 
-        return [[self.calculate(accuracy, resource, x) for x in x_points], list(x_points)]
+        return [list(x_points), [self.calculate(accuracy, resource, x) for x in x_points]]
     
     
     def add(self, label: str, accuracy: float, resources: float):
@@ -65,6 +64,6 @@ class Frugality():
 
     
 frug = Frugality()
-frug.add_many([('aa', 0.50, 500), ('bb', 0.98, 600)])
+frug.add_many([('Less resources', 0.96, 5*60*1000), ('More resources', 0.99, 10*60*1000)])
 frug.plot()
 frug.values()
